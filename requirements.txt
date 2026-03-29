@@ -1,0 +1,10 @@
+pandas
+seaborn
+matplotlib
+python-dotenv
+tiktoken
+langchain
+langchain-community
+openai
+streamlit
+faiss-cpu
