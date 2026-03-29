@@ -5,6 +5,12 @@ python-dotenv
 tiktoken
 langchain
 langchain-community
-openai
+langchain-text-splitters
+langchain-huggingface
+langchain-google-genai
+google-generativeai
+sentence-transformers
 streamlit
 faiss-cpu
+torch
+torchvision

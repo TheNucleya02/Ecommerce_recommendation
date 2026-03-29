@@ -1,14 +1,16 @@
 import os
+from operator import itemgetter
 from dotenv import load_dotenv
 import streamlit as st
-from langchain.chains import RetrievalQA, LLMChain
-from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import DataFrameLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.document_loaders import DataFrameLoader
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_text_splitters import CharacterTextSplitter
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,12 +18,6 @@ load_dotenv()
 def process_data(refined_df):
     """
     Process the refined dataset and create the vector store.
-    
-    Args:
-        refined_df (pd.DataFrame): Preprocessed dataset DataFrame.
-        
-    Returns:
-        vectorstore (FAISS): Vector store containing the processed data.
     """
     refined_df['combined_info'] = refined_df.apply(lambda row: f"Product ID: {row['pid']}. Product URL: {row['product_url']}. Product Name: {row['product_name']}. Primary Category: {row['primary_category']}. Retail Price: ${row['retail_price']}. Discounted Price: ${row['discounted_price']}. Primary Image Link: {row['primary_image_link']}. Description: {row['description']}. Brand: {row['brand']}. Gender: {row['gender']}", axis=1)
 
@@ -31,47 +27,27 @@ def process_data(refined_df):
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     texts = text_splitter.split_documents(docs)
 
-    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = FAISS.from_documents(texts, embeddings)
 
     return vectorstore
 
 def save_vectorstore(vectorstore, directory):
-    """
-    Save the vector store to a directory.
-    
-    Args:
-        vectorstore (FAISS): Vector store to be saved.
-        directory (str): Directory to save the vector store.
-    """
     vectorstore.save_local(directory)
 
 def load_vectorstore(directory, embeddings):
-    """
-    Load the vector store from a directory.
-    
-    Args:
-        directory (str): Directory containing the saved vector store.
-        embeddings (OpenAIEmbeddings): Embeddings object.
-        
-    Returns:
-        vectorstore (FAISS): Loaded vector store.
-    """
-    vectorstore = FAISS.load_local(directory, embeddings, allow_dangerous_deserialization = True  )
+    vectorstore = FAISS.load_local(directory, embeddings, allow_dangerous_deserialization=True)
     return vectorstore
 
+def format_docs(docs):
+    """Helper to format retrieved documents into a single string."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
 def display_product_recommendation(refined_df):
-    """
-    Display product recommendation section.
-    
-    Args:
-        refined_df (pd.DataFrame): Preprocessed dataset DataFrame.
-    """
     st.header("Product Recommendation")
 
     vectorstore_dir = 'vectorstore'
-
-    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     if os.path.exists(vectorstore_dir):
         vectorstore = load_vectorstore(vectorstore_dir, embeddings)
@@ -79,80 +55,83 @@ def display_product_recommendation(refined_df):
         vectorstore = process_data(refined_df)
         save_vectorstore(vectorstore, vectorstore_dir)
 
-    manual_template = """
-    Kindly suggest three similar products based on the description I have provided below:
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
-    Product Department: {department},
-    Product Category: {category},
-    Product Brand: {brand},
-    Maximum Price range: {price}.
-
-    Please provide complete answers including product department name, product category, product name, price, and stock quantity.
-    """
-    prompt_manual = PromptTemplate(
-        input_variables=["department", "category", "brand", "price"],
-        template=manual_template,
-    )
-
-    llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"),
-                     model_name='gpt-3.5-turbo', temperature=0)
-
-    chain = LLMChain(
-        llm=llm,
-        prompt=prompt_manual,
-        verbose=True)
-
-    chatbot_template = """
+    # --- AI Chatbot Recommendation (Pure modern LCEL RAG) ---
+    chatbot_system_prompt = """
     You are a friendly, conversational retail shopping assistant that helps customers find products that match their preferences.
-    From the following context and chat history, assist customers in finding what they are looking for based on their input.
+    Use the following pieces of retrieved context and chat history to assist customers in finding what they are looking for.
     For each question, suggest three products, including their category, price, and current stock quantity.
-    Sort the answer by the cheapest product.
+    Sort the result by the cheapest product.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
+    Context:
     {context}
-
-    Chat history: {history}
-
-    Input: {question}
-    Your Response:
     """
-    chatbot_prompt = PromptTemplate(
-        input_variables=["context", "history", "question"],
-        template=chatbot_template,
+    
+    chatbot_prompt = ChatPromptTemplate.from_messages([
+        ("system", chatbot_system_prompt),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+    ])
+
+    # Pure LCEL RAG Chain
+    retriever = vectorstore.as_retriever()
+    
+    # This building block is the foundation of modern LangChain v1.x
+    rag_chain = (
+        {
+            "context": itemgetter("input") | retriever | format_docs,
+            "input": itemgetter("input"),
+            "chat_history": itemgetter("chat_history")
+        }
+        | chatbot_prompt
+        | llm
+        | StrOutputParser()
     )
 
-    memory = ConversationBufferMemory(memory_key="history", input_key="question", return_messages=True)
+    # Initialize chat history in Streamlit session state
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-    qa = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type='stuff',
-        retriever=vectorstore.as_retriever(),
-        verbose=True,
-        chain_type_kwargs={
-            "verbose": True,
-            "prompt": chatbot_prompt,
-            "memory": memory}
-    )
-
+    # UI Inputs
     department = st.text_input("Product Department")
     category = st.text_input("Product Category")
     brand = st.text_input("Product Brand")
     price = st.text_input("Maximum Price Range")
 
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 4])
 
     with col1:
-        if st.button("Get Manual Recommendations"):
-            response = chain.run(
-                department=department,
-                category=category,
-                brand=brand,
-                price=price
-            )
+        if st.button("Clear Chat"):
+            st.session_state.chat_history = []
+            st.rerun()
+
+    if st.button("Get Recommendations", type="primary"):
+        if not (department or category or brand or price):
+            st.warning("Please enter at least one field for a recommendation.")
+        else:
+            question = f"Suggest three products in {department} category {category} from {brand} under {price}"
+            
+            # Invoke pure LCEL chain
+            with st.spinner("Searching for the best matches in our inventory..."):
+                response = rag_chain.invoke({
+                    "input": question,
+                    "chat_history": st.session_state.chat_history
+                })
+            
+            # Update history
+            st.session_state.chat_history.append(HumanMessage(content=question))
+            st.session_state.chat_history.append(AIMessage(content=response))
+            
             st.write(response)
 
-    with col2:
-        if st.button("Get AI Recommendations"):
-            question = f"Suggest three products in {department} category {category} from {brand} under {price}"
-            response = qa.run(question)
-            st.write(response)
+    # Display Chat History if it exists
+    if st.session_state.chat_history:
+        st.divider()
+        st.subheader("Recent Recommendations")
+        for message in reversed(st.session_state.chat_history):
+            if isinstance(message, AIMessage):
+                st.info(message.content)
+            elif isinstance(message, HumanMessage):
+                st.caption(f"Search: {message.content}")
