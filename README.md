@@ -10,17 +10,17 @@ A state-of-the-art E-commerce product recommendation engine powered by **Generat
 - **Semantic AI Search (RAG):** Utilizes Retrieval-Augmented Generation to match user intent with product descriptions, not just keywords.
 - **Modern LangChain Orchestration:** Built using **LangChain v1.x** and **LCEL (LangChain Expression Language)** for modular and efficient AI chains.
 - **Hybrid Recommendations:** Combine specific filters (Department, Category, Brand, Price) with natural language processing.
-- **Local Vector Database:** Uses **FAISS** with **HuggingFace Embeddings** (`all-MiniLM-L6-v2`) for blazing-fast, persistent product retrieval.
-- **Google Gemini Integration:** Leverages **Gemini 2.0 Flash** for conversational and intelligent product summaries.
+- **Local Vector Database:** Uses **FAISS** with **Mistral AI Embeddings** for blazing-fast, persistent product retrieval.
+- **Mistral AI Integration:** Leverages **Mistral Large Latest** for conversational and intelligent product summaries.
 - **Interactive Streamlit UI:** A clean, responsive dashboard for exploring data and getting recommendations with persistent session-based chat history.
 - **Automated Data Processing:** Intelligent cleaning and tokenization of the Flipkart e-commerce dataset.
 
 ## 🛠️ Tech Stack
 
-- **Large Language Model:** Google Gemini 2.0 Flash
+- **Large Language Model:** Mistral Large Latest
 - **Orchestration:** LangChain v1.x (LCEL)
 - **Vector Store:** FAISS (Facebook AI Similarity Search)
-- **Embeddings:** HuggingFace (Sentence Transformers)
+- **Embeddings:** Mistral AI
 - **Backend/Frontend:** Python, Streamlit
 - **Data Science:** Pandas, Matplotlib, Seaborn
 
@@ -59,7 +59,7 @@ Ecommerce_recommendation/
 4. **Configure API Keys:**
    Create a `.env` file in the root directory:
    ```env
-   GOOGLE_API_KEY=your_google_gemini_api_key
+   MISTRAL_API_KEY=your_mistral_api_key
    ```
 
 ## 🚀 Usage

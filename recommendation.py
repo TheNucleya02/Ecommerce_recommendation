@@ -2,8 +2,7 @@ import os
 from operator import itemgetter
 from dotenv import load_dotenv
 import streamlit as st
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
 from langchain_community.document_loaders import DataFrameLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -27,7 +26,7 @@ def process_data(refined_df):
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     texts = text_splitter.split_documents(docs)
 
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = MistralAIEmbeddings()
     vectorstore = FAISS.from_documents(texts, embeddings)
 
     return vectorstore
@@ -47,15 +46,20 @@ def display_product_recommendation(refined_df):
     st.header("Product Recommendation")
 
     vectorstore_dir = 'vectorstore'
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = MistralAIEmbeddings()
 
     if os.path.exists(vectorstore_dir):
-        vectorstore = load_vectorstore(vectorstore_dir, embeddings)
+        try:
+            vectorstore = load_vectorstore(vectorstore_dir, embeddings)
+        except Exception as e:
+            st.info("Recreating vectorstore with new embeddings...")
+            vectorstore = process_data(refined_df)
+            save_vectorstore(vectorstore, vectorstore_dir)
     else:
         vectorstore = process_data(refined_df)
         save_vectorstore(vectorstore, vectorstore_dir)
 
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+    llm = ChatMistralAI(model="mistral-large-latest")
 
     # --- AI Chatbot Recommendation (Pure modern LCEL RAG) ---
     chatbot_system_prompt = """
