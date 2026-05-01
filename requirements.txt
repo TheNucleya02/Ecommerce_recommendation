@@ -7,5 +7,4 @@ langchain-text-splitters
 langchain-mistralai
 streamlit
 faiss-cpu
-torch
 torchvision

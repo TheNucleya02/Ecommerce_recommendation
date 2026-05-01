@@ -42,9 +42,19 @@ def format_docs(docs):
     """Helper to format retrieved documents into a single string."""
     return "\n\n".join(doc.page_content for doc in docs)
 
-def display_product_recommendation(refined_df):
-    st.header("Product Recommendation")
+SUGGESTIONS = {
+    "🏝️ Beach outfit ideas?": "Suggest some cool beach outfit ideas for summer",
+    "👟 Best running shoes?": "I need durable running shoes under $100",
+    "⌚ Formal watches?": "Show me some elegant formal watches for men",
+}
 
+@st.dialog("Legal disclaimer")
+def show_disclaimer_dialog():
+    st.caption("""
+            This AI chatbot is powered by Mistral AI and public e-commerce data. Answers may be inaccurate, inefficient, or biased. Any use or decisions based on such answers should include reasonable practices including human oversight to ensure they are safe, accurate, and suitable for your intended purpose. We are not liable for any actions, losses, or damages resulting from the use of the chatbot. Do not enter any private, sensitive, personal, or regulated data.
+        """)
+
+def display_product_recommendation(refined_df):
     vectorstore_dir = 'vectorstore'
     embeddings = MistralAIEmbeddings()
 
@@ -52,7 +62,7 @@ def display_product_recommendation(refined_df):
         try:
             vectorstore = load_vectorstore(vectorstore_dir, embeddings)
         except Exception as e:
-            st.info("Recreating vectorstore with new embeddings...")
+            st.info("🔄 Refreshing Assistant memory...")
             vectorstore = process_data(refined_df)
             save_vectorstore(vectorstore, vectorstore_dir)
     else:
@@ -61,15 +71,35 @@ def display_product_recommendation(refined_df):
 
     llm = ChatMistralAI(model="mistral-large-latest")
 
-    # --- AI Chatbot Recommendation (Pure modern LCEL RAG) ---
+    # --- Structured System Prompt ---
     chatbot_system_prompt = """
-    You are a friendly, conversational retail shopping assistant that helps customers find products that match their preferences.
-    Use the following pieces of retrieved context and chat history to assist customers in finding what they are looking for.
-    For each question, suggest three products, including their category, price, and current stock quantity.
-    Sort the result by the cheapest product.
-    If you don't know the answer, just say that you don't know, don't try to make up an answer.
+    You are a premium, expert Retail Shopping Assistant with a focus on luxury and high-end consumer experiences. 
+    Your goal is to provide highly organized, visually appealing, and professional product recommendations that make shopping effortless.
 
-    Context:
+    ### Tone and Style:
+    - Use a sophisticated yet friendly tone.
+    - Be concise but descriptive.
+    - Treat every interaction as a high-end concierge service.
+
+    ### Response Structure:
+    1.  **### [Main Category Heading]**: A clear, bold heading for the category.
+    2.  **Introduction**: A brief (1-2 sentences) personalized opening based on the user's request.
+    3.  **The Selection**: For each recommended product, use this format:
+        *   **[Product Name]** ([Brand]) — [Buy Now]({{product_url}})
+            *   **Price**: ~~$[{{retail_price}}]~~ **$[{{discounted_price}}]** (Save $[{{savings}}]!)
+            *   **Highlight**: A short, punchy sentence about what makes this specific item perfect for them.
+    4.  **Why We Recommend This**: A brief explanation of the curation logic for this set of products.
+    5.  **Pro Tip**: A small piece of expert advice related to the category (e.g., "Pair this watch with a leather strap for a more formal look").
+
+    ### Guidelines:
+    - ALWAYS place the product link (Buy Now) directly next to the product name.
+    - ALWAYS use the modern price format: ~~$Retail Price~~ **$Discounted Price**.
+    - If a price is the same, just show **$Price**.
+    - Calculate the savings if possible.
+    - Use high-quality markdown formatting for readability.
+    - If no relevant products are found, offer a helpful alternative or ask for more details.
+
+    Retrieved Context:
     {context}
     """
     
@@ -79,10 +109,8 @@ def display_product_recommendation(refined_df):
         ("human", "{input}"),
     ])
 
-    # Pure LCEL RAG Chain
-    retriever = vectorstore.as_retriever()
-    
-    # This building block is the foundation of modern LangChain v1.x
+    # RAG Chain
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     rag_chain = (
         {
             "context": itemgetter("input") | retriever | format_docs,
@@ -94,48 +122,114 @@ def display_product_recommendation(refined_df):
         | StrOutputParser()
     )
 
-    # Initialize chat history in Streamlit session state
-    if "chat_history" not in st.session_state:
+    # -----------------------------------------------------------------------------
+    # Draw the UI.
+
+    st.html('<div style="font-size: 5rem; line-height: 1">🛍️</div>')
+
+    title_row = st.container()
+
+    with title_row:
+        st.title(
+            "Retail AI assistant",
+            anchor=False,
+        )
+
+    user_just_asked_initial_question = (
+        "initial_question" in st.session_state and st.session_state.initial_question
+    )
+
+    user_just_clicked_suggestion = (
+        "selected_suggestion" in st.session_state and st.session_state.selected_suggestion
+    )
+
+    user_first_interaction = (
+        user_just_asked_initial_question or user_just_clicked_suggestion
+    )
+
+    has_message_history = (
+        "chat_history" in st.session_state and len(st.session_state.chat_history) > 0
+    )
+
+    # Show a different UI when the user hasn't asked a question yet.
+    if not user_first_interaction and not has_message_history:
         st.session_state.chat_history = []
 
-    # UI Inputs
-    department = st.text_input("Product Department")
-    category = st.text_input("Product Category")
-    brand = st.text_input("Product Brand")
-    price = st.text_input("Maximum Price Range")
+        with st.container():
+            st.chat_input("Ask a question...", key="initial_question")
 
-    col1, col2 = st.columns([1, 4])
+            selected_suggestion = st.pills(
+                label="Examples",
+                label_visibility="collapsed",
+                options=SUGGESTIONS.keys(),
+                key="selected_suggestion",
+            )
 
-    with col1:
-        if st.button("Clear Chat"):
+        st.button(
+            ":gray[:material/balance: Legal disclaimer]",
+            type="tertiary",
+            on_click=show_disclaimer_dialog,
+        )
+
+        st.stop()
+
+    # Show chat input at the bottom when a question has been asked.
+    user_message = st.chat_input("Ask a follow-up or search for products...")
+
+    if not user_message:
+        if user_just_asked_initial_question:
+            user_message = st.session_state.initial_question
+        if user_just_clicked_suggestion:
+            user_message = SUGGESTIONS[st.session_state.selected_suggestion]
+
+    with title_row:
+        def clear_conversation():
             st.session_state.chat_history = []
-            st.rerun()
+            if "initial_question" in st.session_state:
+                del st.session_state["initial_question"]
+            if "selected_suggestion" in st.session_state:
+                del st.session_state["selected_suggestion"]
 
-    if st.button("Get Recommendations", type="primary"):
-        if not (department or category or brand or price):
-            st.warning("Please enter at least one field for a recommendation.")
-        else:
-            question = f"Suggest three products in {department} category {category} from {brand} under {price}"
-            
-            # Invoke pure LCEL chain
-            with st.spinner("Searching for the best matches in our inventory..."):
+        st.button(
+            "Restart",
+            icon=":material/refresh:",
+            on_click=clear_conversation,
+        )
+
+    # Display chat messages from history as speech bubbles.
+    for message in st.session_state.chat_history:
+        if isinstance(message, AIMessage):
+            with st.chat_message("assistant", avatar="🛍️"):
+                st.container()  # Fix ghost message bug.
+                st.markdown(message.content)
+        elif isinstance(message, HumanMessage):
+            with st.chat_message("user"):
+                st.markdown(message.content)
+
+    if user_message:
+        # When the user posts a message...
+
+        # Streamlit's Markdown engine interprets "$" as LaTeX code (used to
+        # display math). The line below fixes it.
+        user_message_escaped = user_message.replace("$", r"\$")
+
+        # Display message as a speech bubble.
+        with st.chat_message("user"):
+            st.text(user_message_escaped)
+
+        # Display assistant response as a speech bubble.
+        with st.chat_message("assistant", avatar="🛍️"):
+            with st.spinner("Analyzing inventory..."):
                 response = rag_chain.invoke({
-                    "input": question,
+                    "input": user_message,
                     "chat_history": st.session_state.chat_history
                 })
-            
-            # Update history
-            st.session_state.chat_history.append(HumanMessage(content=question))
-            st.session_state.chat_history.append(AIMessage(content=response))
-            
-            st.write(response)
 
-    # Display Chat History if it exists
-    if st.session_state.chat_history:
-        st.divider()
-        st.subheader("Recent Recommendations")
-        for message in reversed(st.session_state.chat_history):
-            if isinstance(message, AIMessage):
-                st.info(message.content)
-            elif isinstance(message, HumanMessage):
-                st.caption(f"Search: {message.content}")
+            # Put everything after the spinners in a container to fix the
+            # ghost message bug.
+            with st.container():
+                st.markdown(response)
+
+                # Add messages to chat history.
+                st.session_state.chat_history.append(HumanMessage(content=user_message))
+                st.session_state.chat_history.append(AIMessage(content=response))

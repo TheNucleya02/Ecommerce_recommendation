@@ -99,4 +99,4 @@ def preprocess_data(df):
                            'description', 'brand', 'gender']
     refined_df = df[columns_of_interest]
     refined_df = refined_df.dropna(subset=['primary_category', 'retail_price', 'discounted_price'])
-    return refined_df
+    return refined_df.head(1000)
