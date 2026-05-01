@@ -2,7 +2,7 @@
 
 A state-of-the-art, concierge-style E-commerce recommendation engine powered by **Generative AI** and **RAG (Retrieval-Augmented Generation)**. This system provides a premium, chat-first experience that understands semantic intent and natural language queries to offer highly relevant product suggestions.
 
-![Product Recommendation Demo](https://via.placeholder.com/800x450.png?text=Retail+AI+Assistant+Interface)
+### Live Link - https://seekshop.streamlit.app
 
 ## 🚀 Key Features
 
