@@ -4,6 +4,9 @@ A state-of-the-art, concierge-style E-commerce recommendation engine powered by 
 
 ### Live Link - https://seekshop.streamlit.app
 
+### <img width="400" height="350" alt="Screenshot 2026-05-01 at 10 21 41 PM" src="https://github.com/user-attachments/assets/e45fb13c-54d1-402d-a124-2e2a6b2c9148" />
+
+
 ## 🚀 Key Features
 
 - **Chat-First Experience:** A modern, minimalist interface centered around a sticky chat input for natural, conversational shopping.
