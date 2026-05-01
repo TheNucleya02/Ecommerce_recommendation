@@ -1,6 +1,4 @@
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import streamlit as st
 from ast import literal_eval
 
@@ -102,30 +100,3 @@ def preprocess_data(df):
     refined_df = df[columns_of_interest]
     refined_df = refined_df.dropna(subset=['primary_category', 'retail_price', 'discounted_price'])
     return refined_df
-
-def display_data_analysis(refined_df):
-    """
-    Display data analysis visualizations.
-    
-    Args:
-        refined_df (pd.DataFrame): Preprocessed dataset DataFrame.
-    """
-    st.header("Data Analysis")
-
-    top_categories = refined_df['primary_category'].value_counts().nlargest(10).index
-    top_categories_df = refined_df[refined_df['primary_category'].isin(top_categories)]
-
-    fig, ax = plt.subplots(figsize=(12, 8))
-    sns.boxplot(x='retail_price', y='primary_category', data=top_categories_df, ax=ax)
-    ax.set_title('Price Distribution Across Top Categories')
-    ax.set_xlabel('Retail Price')
-    ax.set_ylabel('Category')
-    st.pyplot(fig)
-
-    refined_df['discount_percentage'] = ((refined_df['retail_price'] - refined_df['discounted_price']) / refined_df['retail_price']) * 100
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sns.histplot(refined_df['discount_percentage'], bins=30, kde=True, ax=ax)
-    ax.set_title('Discount Percentage Distribution')
-    ax.set_xlabel('Discount Percentage')
-    ax.set_ylabel('Number of Products')
-    st.pyplot(fig)

@@ -1,4 +1,4 @@
-# 🛍️ E-commerce GenAI Recommendation System
+# 🛍️ E-commerce GenAI Assistant
 
 A state-of-the-art E-commerce product recommendation engine powered by **Generative AI** and **RAG (Retrieval-Augmented Generation)**. This system goes beyond traditional filtering by understanding semantic meaning and natural language queries to provide highly relevant product suggestions.
 
@@ -12,7 +12,7 @@ A state-of-the-art E-commerce product recommendation engine powered by **Generat
 - **Hybrid Recommendations:** Combine specific filters (Department, Category, Brand, Price) with natural language processing.
 - **Local Vector Database:** Uses **FAISS** with **Mistral AI Embeddings** for blazing-fast, persistent product retrieval.
 - **Mistral AI Integration:** Leverages **Mistral Large Latest** for conversational and intelligent product summaries.
-- **Interactive Streamlit UI:** A clean, responsive dashboard for exploring data and getting recommendations with persistent session-based chat history.
+- **Interactive Streamlit UI:** A clean, responsive dashboard for getting recommendations with persistent session-based chat history.
 - **Automated Data Processing:** Intelligent cleaning and tokenization of the Flipkart e-commerce dataset.
 
 ## 🛠️ Tech Stack
@@ -22,7 +22,7 @@ A state-of-the-art E-commerce product recommendation engine powered by **Generat
 - **Vector Store:** FAISS (Facebook AI Similarity Search)
 - **Embeddings:** Mistral AI
 - **Backend/Frontend:** Python, Streamlit
-- **Data Science:** Pandas, Matplotlib, Seaborn
+- **Data Science:** Pandas
 
 ## 📂 Project Structure
 
@@ -30,7 +30,7 @@ A state-of-the-art E-commerce product recommendation engine powered by **Generat
 Ecommerce_recommendation/
 ├── app.py                # Main Streamlit entrance
 ├── recommendation.py     # AI Logic, LCEL Chains, and RAG Implementation
-├── data_processing.py    # Data cleaning and exploratory analysis
+├── data_processing.py    # Data cleaning and preprocessing
 ├── vectorstore/          # Local FAISS index (generated on first run)
 ├── requirements.txt      # Project dependencies
 ├── .env                  # Environment secrets (API Keys)

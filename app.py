@@ -1,25 +1,21 @@
 import streamlit as st
-from data_processing import load_data, preprocess_data, display_data_analysis
+from data_processing import load_data, preprocess_data
 from recommendation import display_product_recommendation
 
 def main():
     """
     Main function to run the Streamlit app.
     """
-    st.title("E-commerce Product Recommendation")
+    st.set_page_config(page_title="E-commerce GenAI Assistant", layout="wide")
+    st.title("🛍️ E-commerce GenAI Assistant")
 
     dataset_path = 'flipkart_com-ecommerce_sample.csv'
     df = load_data(dataset_path)
     
     if df is not None:
         refined_df = preprocess_data(df)
-
-        option = st.sidebar.selectbox("Select an option", ("Data Analysis", "Product Recommendation"))
-
-        if option == "Data Analysis":
-            display_data_analysis(refined_df)
-        elif option == "Product Recommendation":
-            display_product_recommendation(refined_df)
+        # Directly display product recommendation
+        display_product_recommendation(refined_df)
 
 if __name__ == '__main__':
     main()
