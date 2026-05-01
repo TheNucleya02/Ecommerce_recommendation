@@ -131,7 +131,7 @@ def display_product_recommendation(refined_df):
 
     with title_row:
         st.title(
-            "Retail AI assistant",
+            "Seek Shop",
             anchor=False,
         )
 

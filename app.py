@@ -6,7 +6,7 @@ def main():
     """
     Main function to run the Streamlit app.
     """
-    st.set_page_config(page_title="Retail AI Assistant", page_icon="🛍️")
+    st.set_page_config(page_title="Seek Shop", page_icon="🛍️")
 
     dataset_path = 'flipkart_com-ecommerce_sample.csv'
     df = load_data(dataset_path)

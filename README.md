@@ -1,19 +1,18 @@
-# 🛍️ E-commerce GenAI Assistant
+# 🛍️ Seek Shop
 
-A state-of-the-art E-commerce product recommendation engine powered by **Generative AI** and **RAG (Retrieval-Augmented Generation)**. This system goes beyond traditional filtering by understanding semantic meaning and natural language queries to provide highly relevant product suggestions.
+A state-of-the-art, concierge-style E-commerce recommendation engine powered by **Generative AI** and **RAG (Retrieval-Augmented Generation)**. This system provides a premium, chat-first experience that understands semantic intent and natural language queries to offer highly relevant product suggestions.
 
-![Product Recommendation Demo](https://via.placeholder.com/800x450.png?text=GIF+Placeholder+-+Insert+Demo+GIF+Here)
-*Note: Add your demo GIF here to showcase the interactive UI!*
+![Product Recommendation Demo](https://via.placeholder.com/800x450.png?text=Retail+AI+Assistant+Interface)
 
 ## 🚀 Key Features
 
-- **Semantic AI Search (RAG):** Utilizes Retrieval-Augmented Generation to match user intent with product descriptions, not just keywords.
-- **Modern LangChain Orchestration:** Built using **LangChain v1.x** and **LCEL (LangChain Expression Language)** for modular and efficient AI chains.
-- **Hybrid Recommendations:** Combine specific filters (Department, Category, Brand, Price) with natural language processing.
-- **Local Vector Database:** Uses **FAISS** with **Mistral AI Embeddings** for blazing-fast, persistent product retrieval.
-- **Mistral AI Integration:** Leverages **Mistral Large Latest** for conversational and intelligent product summaries.
-- **Interactive Streamlit UI:** A clean, responsive dashboard for getting recommendations with persistent session-based chat history.
-- **Automated Data Processing:** Intelligent cleaning and tokenization of the Flipkart e-commerce dataset.
+- **Chat-First Experience:** A modern, minimalist interface centered around a sticky chat input for natural, conversational shopping.
+- **Semantic AI Search (RAG):** Utilizes Retrieval-Augmented Generation to match user intent with product descriptions, moving beyond simple keyword matching.
+- **Intelligent Landing Page:** Includes pill-shaped suggestion buttons to help users jump-start their search with common queries.
+- **Premium Response Formatting:** AI suggestions are organized with professional headings, feature highlights, and clear pricing comparisons.
+- **Local Vector Database:** Uses **FAISS** with **Mistral AI Embeddings** for blazing-fast, semantic product retrieval.
+- **Performance Optimized:** Automatically samples the top 1,000 products for testing, reducing vector store generation time from 30 minutes to under 90 seconds.
+- **Concierge Logic:** Context-aware chat history allows users to refine their search (e.g., "Show me these but in a different color").
 
 ## 🛠️ Tech Stack
 
@@ -28,9 +27,9 @@ A state-of-the-art E-commerce product recommendation engine powered by **Generat
 
 ```text
 Ecommerce_recommendation/
-├── app.py                # Main Streamlit entrance
-├── recommendation.py     # AI Logic, LCEL Chains, and RAG Implementation
-├── data_processing.py    # Data cleaning and preprocessing
+├── app.py                # Main Streamlit entry point
+├── recommendation.py     # Premium UI, Chat Logic, and RAG Implementation
+├── data_processing.py    # Intelligent data cleaning and 1k row sampling
 ├── vectorstore/          # Local FAISS index (generated on first run)
 ├── requirements.txt      # Project dependencies
 ├── .env                  # Environment secrets (API Keys)
@@ -54,6 +53,7 @@ Ecommerce_recommendation/
 3. **Install Dependencies:**
    ```bash
    pip install -r requirements.txt
+   pip install faiss-cpu  # Required for vector search
    ```
 
 4. **Configure API Keys:**
@@ -68,15 +68,15 @@ Ecommerce_recommendation/
    ```bash
    streamlit run app.py
    ```
-2. **First Run:** The system will process the dataset and generate the local FAISS vector store automatically.
+2. **First Run:** The system will process the dataset and generate the local FAISS vector store. Thanks to recent optimizations, this will take less than 2 minutes.
 3. **Get Recommendations:**
-   - Navigate to the "Product Recommendation" section.
-   - Enter your preferences (Department, Brand, Price).
-   - The AI will fetch the best matches and provide a conversational summary of the top 3 products.
+   - Use the **Suggestion Pills** on the landing page for quick results.
+   - Type naturally in the **Chat Input** at the bottom (e.g., "Suggest a formal outfit for a wedding").
+   - Refine your search by asking follow-up questions.
 
 ## 📊 Dataset
 
-The system is optimized for the **Flipkart E-commerce dataset**, which includes rich product metadata such as names, descriptions, pricing, and image links.
+The system is optimized for the **Flipkart E-commerce dataset**, providing rich metadata such as names, descriptions, and current pricing.
 
 ## 🤝 Contributing
 
@@ -84,4 +84,4 @@ Contributions are welcome! Feel free to open an issue or submit a pull request f
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
